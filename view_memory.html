@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Memory Analysis | Aetherion{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h1>Memory Analysis</h1>
+    <p>Aetherion AI's spiritual insights and patterns</p>
+</div>
+
+<div class="memory-container">
+    <div class="card">
+        <div class="card-title">Memory #{{ memory.id }}</div>
+        <div class="card-meta">
+            <span>Recorded on {{ memory.created_at.strftime('%B %d, %Y') }}</span>
+        </div>
+        <div class="card-content">
+            <p>{{ memory.content }}</p>
+        </div>
+        
+        {% if memory.context %}
+        <div class="memory-context">
+            <h3>Context</h3>
+            <p>{{ memory.context }}</p>
+        </div>
+        {% endif %}
+        
+        {% if memory.summary %}
+        <div class="memory-summary">
+            <h3>Summary</h3>
+            <p>{{ memory.summary }}</p>
+        </div>
+        {% endif %}
+        
+        {% if memory.tags %}
+        <div class="tags">
+            {% for tag in memory.tags.split(',') %}
+                <span class="tag">{{ tag.strip() }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% if memory.file_path %}
+        <div class="memory-file">
+            <h3>Attached File</h3>
+            <p>
+                <strong>{{ memory.file_name }}</strong> ({{ memory.file_type }})
+                <a href="{{ url_for('main.download_file', memory_id=memory.id) }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-download"></i> Download File
+                </a>
+            </p>
+            
+            {% if memory.file_type in ['jpg', 'jpeg', 'png', 'gif'] %}
+            <div class="file-preview">
+                <img src="{{ url_for('main.download_file', memory_id=memory.id) }}" alt="Memory image" class="memory-image">
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Analysis section intentionally removed as per user request -->
+
+<div class="memory-actions">
+    <div class="left-actions">
+        <a href="{{ url_for('main.memories') }}" class="btn">Back to Memories</a>
+        <a href="{{ url_for('main.export_memory', memory_id=memory.id) }}" class="btn btn-secondary">
+            <i class="fas fa-file-export"></i> Export as Text
+        </a>
+    </div>
+    <div class="right-actions">
+        <form action="{{ url_for('main.delete_memory', memory_id=memory.id) }}" method="POST" class="inline-form" onsubmit="return confirm('Are you sure you want to delete this memory?');">
+            <button type="submit" class="btn btn-danger">Delete Memory</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

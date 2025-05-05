@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Memories | Aetherion{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h1>Your Memory Vault</h1>
+    <p>Explore your collected memories, insights, and spiritual reflections.</p>
+</div>
+
+<div class="memory-controls">
+    <a href="{{ url_for('main.add_memory') }}" class="btn btn-primary">Record New Memory</a>
+</div>
+
+<div class="memory-grid">
+    {% if memories %}
+        {% for memory in memories %}
+            <div class="card">
+                <div class="card-title">Memory #{{ memory.id }}</div>
+                <div class="card-meta">
+                    <span>{{ memory.created_at.strftime('%B %d, %Y') }}</span>
+                </div>
+                <div class="card-content">
+                    {{ memory.content|truncate(150) }}
+                </div>
+                {% if memory.tags %}
+                    <div class="tags">
+                        {% for tag in memory.tags.split(',') %}
+                            <span class="tag">{{ tag.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="card-actions">
+                    <a href="{{ url_for('main.view_memory', memory_id=memory.id) }}" class="btn btn-primary">View Analysis</a>
+                    <form action="{{ url_for('main.delete_memory', memory_id=memory.id) }}" method="POST" class="inline-form" onsubmit="return confirm('Are you sure you want to delete this memory?');">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <p>You haven't recorded any memories yet.</p>
+            <a href="{{ url_for('main.add_memory') }}" class="btn btn-primary">Record Your First Memory</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Access Memory Vault | Aetherion{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h1>Enter the Memory Vault</h1>
+    <p>Enter your password to access your protected memories</p>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('main.login') }}">
+        <div class="form-group">
+            <label for="password">Memory Vault Password</label>
+            <div class="password-container" style="position: relative;">
+                <input type="password" id="password" name="password" placeholder="Enter your vault password" required>
+                <button type="button" id="toggle-password" class="toggle-password" 
+                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+                               background: none; border: none; cursor: pointer;">
+                    <span id="eye-icon">👁️</span>
+                </button>
+            </div>
+            <small>Default password: cosmic_awareness</small>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Access Vault</button>
+            <a href="{{ url_for('main.index') }}" class="btn">Return Home</a>
+        </div>
+    </form>
+</div>
+
+<div class="info-section">
+    <h3>About Memory Protection</h3>
+    <p>For security and privacy, your memories in Aetherion are protected by a password. While the AI analysis 
+    features are freely accessible, your personal memories require authentication to access.</p>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('password');
+        const toggleButton = document.getElementById('toggle-password');
+        const eyeIcon = document.getElementById('eye-icon');
+        
+        toggleButton.addEventListener('click', function() {
+            // Toggle the type attribute of the password input
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle the eye icon
+            eyeIcon.textContent = type === 'password' ? '👁️' : '🔒';
+        });
+        
+        // Prevent the toggle button from submitting the form
+        toggleButton.addEventListener('mousedown', function(event) {
+            event.preventDefault();
+        });
+    });
+</script>
+{% endblock %}

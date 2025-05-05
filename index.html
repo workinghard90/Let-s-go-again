@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block hero %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>Welcome to Aetherion</h1>
+        <p>A spiritual memory vault for capturing and analyzing your deepest insights, dreams, and reflections.</p>
+        <a href="{{ url_for('main.add_memory') }}" class="btn btn-primary">Record a Memory</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h2>Recent Memories</h2>
+    <p>Your most recent spiritual insights and reflections.</p>
+</div>
+
+<div class="memory-grid">
+    {% if memories %}
+        {% for memory in memories %}
+            <div class="card">
+                <div class="card-title">Memory #{{ memory.id }}</div>
+                <div class="card-meta">
+                    <span>{{ memory.created_at.strftime('%B %d, %Y') }}</span>
+                </div>
+                <div class="card-content">
+                    {{ memory.content|truncate(150) }}
+                </div>
+                {% if memory.tags %}
+                    <div class="tags">
+                        {% for tag in memory.tags.split(',') %}
+                            <span class="tag">{{ tag.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="card-actions">
+                    <a href="{{ url_for('main.view_memory', memory_id=memory.id) }}" class="btn btn-primary">View Analysis</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <p>You haven't recorded any memories yet.</p>
+            <a href="{{ url_for('main.add_memory') }}" class="btn btn-primary">Record Your First Memory</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="features-section">
+    <h2>Aetherion Features</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <h3>Spiritual Memory Analysis</h3>
+            <p>Receive deep insights into your memories, dreams, and reflections with our AI-powered spiritual analysis.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Emotional Pattern Recognition</h3>
+            <p>Discover emotional patterns and energetic signatures in your memories to gain deeper self-awareness.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Archetypal Insights</h3>
+            <p>Identify archetypal themes and symbols that appear in your memories for spiritual and psychological growth.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Secure Memory Vault</h3>
+            <p>All your memories are stored securely in your personal memory vault with spiritual privacy.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

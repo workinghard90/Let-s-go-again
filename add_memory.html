@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Record Memory | Aetherion{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h1>Record a New Memory</h1>
+    <p>Capture your spiritual insights, dreams, and reflections for analysis.</p>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('main.add_memory') }}">
+        <div class="form-group">
+            <label for="content">Memory Content</label>
+            <textarea id="content" name="content" placeholder="Describe your memory, dream, insight or reflection in detail..." required></textarea>
+            <small>This is the core of your memory that will be analyzed by Aetherion AI.</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="context">Context (Optional)</label>
+            <input type="text" id="context" name="context" placeholder="What was happening when you had this experience or insight?">
+            <small>Providing context helps with deeper analysis of your memory.</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="summary">Summary (Optional)</label>
+            <input type="text" id="summary" name="summary" placeholder="Brief summary of this memory">
+            <small>A concise summary to help you quickly identify this memory later.</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="tags">Tags (Optional)</label>
+            <input type="text" id="tags" name="tags" placeholder="meditation, dream, vision, insight (comma separated)">
+            <small>Add tags to categorize and easily find related memories.</small>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Analyze Memory</button>
+            <a href="{{ url_for('main.memories') }}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-expand textarea as user types
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.querySelector('textarea');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    });
+</script>
+{% endblock %}

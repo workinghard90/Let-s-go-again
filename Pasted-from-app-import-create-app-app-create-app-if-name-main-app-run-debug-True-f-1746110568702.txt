@@ -1,0 +1,291 @@
+from app import create_app
+
+app = create_app()
+
+if __name__ == '__main__':
+    app.run(debug=True)
+flask
+flask_sqlalchemy
+flask_login
+nltk
+transformers
+torch
+cryptography
+python-dotenv
+__pycache__/
+*.pyc
+instance/
+.env
+*.sqlite3
+secure_uploads/
+nltk_data/
+file_encryption.key
+.vscode/
+.devcontainer/
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+
+db = SQLAlchemy()
+login_manager = LoginManager()
+
+def create_app():
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'your-secret-key'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///memory.db'
+    app.config['UPLOAD_FOLDER'] = 'secure_uploads'
+
+    db.init_app(app)
+    login_manager.init_app(app)
+
+    from .routes import main as main_blueprint
+    app.register_blueprint(main_blueprint)
+
+    return app from . import db
+from flask_login import UserMixin
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True)
+    password = db.Column(db.String(200))
+
+class Memory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    title = db.Column(db.String(150))
+    content = db.Column(db.Text)
+
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField
+from wtforms.validators import InputRequired, Length
+
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[InputRequired(), Length(min=4, max=100)])
+    password = PasswordField('Password', validators=[InputRequired(), Length(min=4, max=100)])
+    submit = SubmitField('Login')
+
+class MemoryForm(FlaskForm):
+    title = StringField('Title', validators=[InputRequired()])
+    content = TextAreaField('Content', validators=[InputRequired()])
+    submit = SubmitField('Save')
+
+from cryptography.fernet import Fernet
+import os
+
+KEY_FILE = 'file_encryption.key'
+
+def get_encryption_key():
+    if not os.path.exists(KEY_FILE):
+        key = Fernet.generate_key()
+        with open(KEY_FILE, 'wb') as f:
+            f.write(key)
+    else:
+        with open(KEY_FILE, 'rb') as f:
+            key = f.read()
+    return key
+
+def encrypt_file(file_data):
+    key = get_encryption_key()
+    f = Fernet(key)
+    return f.encrypt(file_data)
+
+def decrypt_file(file_data):
+    key = get_encryption_key()
+    f = Fernet(key)
+    return f.decrypt(file_data)
+
+from flask import Blueprint, render_template, redirect, url_for, request, flash, send_from_directory
+from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+import os
+
+from . import db, login_manager
+from .models import User, Memory
+from .forms import LoginForm, MemoryForm
+from .utils import encrypt_file, decrypt_file
+
+main = Blueprint('main', __name__)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+@main.route('/', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and check_password_hash(user.password, form.password.data):
+            login_user(user)
+            return redirect(url_for('main.dashboard'))
+        flash('Invalid credentials')
+    return render_template('login.html', form=form)
+
+@main.route('/dashboard')
+@login_required
+def dashboard():
+    memories = Memory.query.filter_by(user_id=current_user.id).all()
+    return render_template('dashboard.html', memories=memories)
+
+@main.route('/add_memory', methods=['GET', 'POST'])
+@login_required
+def add_memory():
+    form = MemoryForm()
+    if form.validate_on_submit():
+        memory = Memory(user_id=current_user.id, title=form.title.data, content=form.content.data)
+        db.session.add(memory)
+        db.session.commit()
+        return redirect(url_for('main.dashboard'))
+    return render_template('index.html', form=form)
+
+@main.route('/view/<int:memory_id>')
+@login_required
+def view_memory(memory_id):
+    memory = Memory.query.get_or_404(memory_id)
+    return render_template('memory_view.html', memory=memory)
+
+@main.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('main.login'))
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}AetherionAI{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
+
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<h2>Welcome to AetherionAI</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    {{ form.username.label }} {{ form.username }}
+    {{ form.password.label }} {{ form.password }}
+    {{ form.submit }}
+</form>
+{% endblock %}
+
+{% extends "base.html" %}
+{% block title %}New Memory{% endblock %}
+{% block content %}
+<h2>Create New Memory</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    {{ form.title.label }} {{ form.title }}
+    {{ form.content.label }} {{ form.content }}
+    {{ form.submit }}
+</form>
+{% endblock %}
+
+{% extends "base.html" %}
+{% block title %}Your Memories{% endblock %}
+{% block content %}
+<h2>Memory Dashboard</h2>
+<a href="{{ url_for('main.add_memory') }}">+ New Memory</a>
+<ul>
+{% for memory in memories %}
+    <li><a href="{{ url_for('main.view_memory', memory_id=memory.id) }}">{{ memory.title }}</a></li>
+{% endfor %}
+</ul>
+<a href="{{ url_for('main.logout') }}">Logout</a>
+{% endblock %}
+
+{% extends "base.html" %}
+{% block title %}Memory{% endblock %}
+{% block content %}
+<h2>{{ memory.title }}</h2>
+<p>{{ memory.content }}</p>
+<a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
+{% endblock %}
+
+body {
+    font-family: 'Georgia', serif;
+    background: #fdf6f0;
+    color: #333;
+    padding: 2rem;
+}
+h2 {
+    color: #5e4b8b;
+}
+form {
+    margin-top: 1rem;
+}
+input, textarea, button {
+    display: block;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    width: 100%;
+}
+button {
+    background: #5e4b8b;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+{
+  "name": "Aetherion Dev",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "extensions": [
+    "ms-python.python",
+    "ms-toolsai.jupyter",
+    "ms-azuretools.vscode-docker"
+  ],
+  "forwardPorts": [5000],
+  "postCreateCommand": "pip install -r requirements.txt"
+}
+
+FROM python:3.10-slim
+
+WORKDIR /workspace
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+CMD ["bash"]
+
+{
+  "python.pythonPath": "/usr/local/bin/python",
+  "python.formatting.provider": "black",
+  "editor.formatOnSave": true,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true
+  }
+}
+
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-toolsai.jupyter",
+    "esbenp.prettier-vscode",
+    "davidanson.vscode-markdownlint"
+  ]
+}
+
+How to use this setup:
+	1.	Install Docker and VS Code (if not already).
+	2.	Open the project folder in VS Code.
+	3.	Install the Dev Containers extension.
+	4.	Press F1, search Dev Containers: Reopen in Container.
+	5.	Once built, you’ll be in an isolated environment with everything preinstalled.
+	6.	Click Run or use the terminal:
+flask run
+
+

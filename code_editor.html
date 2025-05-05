@@ -1,0 +1,1115 @@
+{% extends 'base.html' %}
+
+{% block title %}Collaborative Code Editor | Aetherion{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --spacing-xs: 4px;
+        --spacing-sm: 8px;
+        --spacing-md: 16px;
+        --spacing-lg: 24px;
+        --spacing-xl: 32px;
+        --radius-xs: 4px;
+        --radius-sm: 6px;
+        --radius-md: 8px;
+        --color-border: #ddd;
+    }
+    
+    .editor-section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
+        width: 100%;
+        min-height: 600px;
+        margin-bottom: 50px;
+    }
+    
+    .code-editor-container {
+        display: flex;
+        height: 600px;
+        gap: var(--spacing-md);
+    }
+    
+    .editor-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    #code-editor {
+        width: 100%;
+        flex: 1;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        font-family: monospace;
+        font-size: 14px;
+        padding: var(--spacing-md);
+        resize: none;
+        background-color: #272822;
+        color: #f8f8f2;
+        min-height: 300px;
+        line-height: 1.5;
+    }
+    
+    .editor-controls {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        flex-wrap: wrap;
+    }
+    
+    .editor-actions {
+        display: flex;
+        gap: var(--spacing-md);
+        flex-wrap: wrap;
+    }
+    
+    .editor-actions button {
+        background-color: #4a6fe3; /* Consistent coloring */
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Add shadow for better visibility */
+    }
+    
+    .editor-actions button:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .editor-actions button:active {
+        transform: translateY(0);
+    }
+    
+    /* Different colors for different actions */
+    .editor-actions #analyze-btn {
+        background-color: #2e86de;
+    }
+    
+    .editor-actions #explain-btn {
+        background-color: #3867d6;
+    }
+    
+    .editor-actions #improve-btn {
+        background-color: #4b7bec;
+    }
+    
+    .editor-actions #save-btn {
+        background-color: #20bf6b;
+    }
+    
+    .editor-actions #clear-btn {
+        background-color: #eb3b5a;
+    }
+    
+    .editor-actions #sample-btn {
+        background-color: #8854d0;
+    }
+    
+    .editor-actions #generate-btn {
+        background-color: #26de81;
+    }
+    
+    .language-select {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--color-border);
+    }
+    
+    .output-area {
+        height: 200px;
+        overflow-y: auto;
+        background-color: #f5f5f5;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        padding: var(--spacing-md);
+        margin-top: var(--spacing-md);
+        white-space: pre-wrap;
+        font-family: monospace;
+    }
+
+    .chat-area {
+        flex: 0 0 45%;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        height: 100%;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--spacing-md);
+        background-color: #fff;
+        min-height: 350px;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    
+    .chat-input-area {
+        display: flex;
+        flex-direction: column; /* Stack elements vertically */
+        gap: 10px; /* Space between elements */
+        padding: var(--spacing-md);
+        border-top: 1px solid var(--color-border);
+        background-color: #f9f9f9;
+    }
+    
+    .chat-input {
+        width: 100%; /* Full width */
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        padding: var(--spacing-md);
+        min-height: 150px; /* Slightly reduced height for better proportions */
+        box-sizing: border-box; /* Make sure padding is included in width */
+        resize: vertical; /* Allow vertical resizing */
+        font-family: inherit;
+        font-size: 16px; /* Slightly larger font */
+        line-height: 1.5;
+        background-color: #fff; /* White background */
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); /* Inner shadow for depth */
+    }
+    
+    .chat-send-btn {
+        align-self: flex-end; /* Align the button to the right */
+        padding: 10px 20px;
+        height: 45px; /* Fixed height for the button */
+        min-width: 100px;
+        background-color: #4a6fe3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 16px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .chat-send-btn:hover {
+        background-color: #3c5fc8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .chat-send-btn:active {
+        transform: translateY(0);
+    }
+    
+    .message {
+        margin-bottom: var(--spacing-md);
+        padding: var(--spacing-md);
+        border-radius: var(--radius-sm);
+        max-width: 95%;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .user-message {
+        background-color: #e6f7ff;
+        margin-left: auto;
+        border-bottom-right-radius: 0;
+    }
+    
+    .ai-message {
+        background-color: #f5f5f5;
+        margin-right: auto;
+        border-bottom-left-radius: 0;
+    }
+    
+    .message-content {
+        word-break: break-word;
+    }
+    
+    .message-content pre {
+        white-space: pre-wrap;
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: var(--spacing-sm);
+        border-radius: var(--radius-sm);
+        margin: var(--spacing-md) 0;
+        overflow-x: auto;
+        font-family: monospace;
+    }
+    
+    .message-meta {
+        font-size: 0.8em;
+        color: #888;
+        text-align: right;
+        margin-top: var(--spacing-xs);
+    }
+    
+    /* Button styling */
+    .btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .btn-primary {
+        background-color: #4a6fe3;
+        color: white;
+    }
+    
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    @media (max-width: 992px) {
+        .code-editor-container {
+            flex-direction: column;
+            height: auto;
+        }
+        
+        .chat-area {
+            margin-top: var(--spacing-md);
+            min-height: 400px;
+        }
+        
+        #code-editor {
+            min-height: 300px;
+        }
+        
+        .editor-column {
+            min-height: 500px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h1>Collaborative Code Editor</h1>
+    <p>Work on code together with the AI assistant</p>
+</div>
+
+<div class="editor-section">
+    <div class="editor-controls">
+        <div class="editor-actions">
+            <select id="language-select" class="language-select">
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+                <option value="csharp">C#</option>
+                <option value="ruby">Ruby</option>
+                <option value="go">Go</option>
+                <option value="php">PHP</option>
+                <option value="sql">SQL</option>
+            </select>
+        </div>
+        <div class="editor-actions">
+            <button id="analyze-btn" class="btn btn-secondary" onclick="javascript:alert('Analyze button clicked');">Analyze Code</button>
+            <button id="explain-btn" class="btn btn-primary" onclick="javascript:alert('Explain button clicked');">Explain Code</button>
+            <button id="improve-btn" class="btn btn-secondary" onclick="javascript:alert('Improve button clicked');">Improve Code</button>
+            <button id="generate-btn" class="btn btn-success" onclick="javascript:alert('Generate button clicked');">Generate Code</button>
+            <button id="save-btn" class="btn" onclick="javascript:alert('Save button clicked');">Save to Memory</button>
+            <button id="clear-btn" class="btn btn-danger" onclick="javascript:alert('Clear button clicked');">Clear</button>
+            <button id="sample-btn" class="btn" onclick="javascript:alert('Sample button clicked');">Insert Sample</button>
+        </div>
+    </div>
+    
+    <div class="code-editor-container">
+        <div class="editor-column">
+            <textarea id="code-editor" placeholder="Write or paste code here..."></textarea>
+            <div id="output-area" class="output-area"><!-- Code output will appear here --></div>
+        </div>
+        
+        <div class="chat-area">
+            <div id="chat-messages" class="chat-messages">
+                <div class="message ai-message">
+                    <div class="message-content">
+                        Welcome to the collaborative code editor! Type or paste your code in the editor, and I'll help you analyze, explain, or improve it. You can also ask me coding questions here.
+                    </div>
+                    <div class="message-meta">AI Assistant</div>
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <textarea id="chat-input" class="chat-input" placeholder="Ask a question about the code..."></textarea>
+                <button id="chat-send-btn" class="btn btn-primary chat-send-btn" onclick="javascript:alert('Chat send button clicked');">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Add jQuery from CDN with fallback -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Fallback if CDN fails -->
+<script>
+    if (typeof jQuery === 'undefined') {
+        document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"><\/script>');
+    }
+</script>
+
+<script>
+    // Simplified code with direct debugging
+    window.addEventListener('error', function(event) {
+        console.error('Uncaught error:', event.error);
+        alert('A JavaScript error occurred: ' + event.error.message);
+    });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM fully loaded and ready for code editor initialization');
+        const codeEditor = document.getElementById('code-editor');
+        const outputArea = document.getElementById('output-area');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const languageSelect = document.getElementById('language-select');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const explainBtn = document.getElementById('explain-btn');
+        const improveBtn = document.getElementById('improve-btn');
+        const generateBtn = document.getElementById('generate-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        
+        // Function to add a message to the chat
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = content;
+            
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'message-meta';
+            metaDiv.textContent = isUser ? 'You' : 'AI Assistant';
+            
+            messageDiv.appendChild(contentDiv);
+            messageDiv.appendChild(metaDiv);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Function to send a message to the AI - completely rewritten for reliability and improved debugging
+        function sendMessageToAI(message, action = 'chat') {
+            console.log(`========= CODE EDITOR DEBUG =========`);
+            console.log(`Action: ${action}`);
+            console.log(`Message: ${message}`);
+            
+            // Show message immediately for better UX
+            addMessage(message, true);
+            
+            // Get the code from the editor
+            const code = codeEditor.value;
+            const language = languageSelect.value;
+            
+            console.log(`Code length: ${code.length} characters`);
+            console.log(`Language selected: ${language}`);
+            
+            // Create the request data object
+            const requestData = {
+                content: message,
+                code: code,
+                language: language,
+                analysis_type: action
+            };
+            
+            // Show loading state
+            const loadingMessage = `<em>Processing your ${action} request...</em>`;
+            addMessage(loadingMessage, false);
+            outputArea.textContent = `Processing ${action} request...`;
+            
+            // Log for debugging
+            console.log('Sending data:', requestData);
+            
+            // Use XMLHttpRequest instead of fetch for more detailed debugging
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/analyze', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            
+            // Set up callbacks
+            xhr.onload = function() {
+                console.log('Response status:', xhr.status);
+                console.log('Response text:', xhr.responseText);
+                
+                // Remove the loading message (last message in the list)
+                chatMessages.removeChild(chatMessages.lastChild);
+                
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        console.log('Parsed response data:', data);
+                        
+                        // Process the response
+                        let responseContent = '';
+                        
+                        if (data.error) {
+                            responseContent = `<p class="error">Error: ${data.error}</p>`;
+                            outputArea.textContent = `Error: ${data.error}`;
+                        } else {
+                            outputArea.textContent = 'Request completed successfully';
+                        }
+                        
+                        if (data.chat_response) {
+                            responseContent = data.chat_response;
+                        }
+                        
+                        if (data.generated_code) {
+                            responseContent += `<pre>${data.generated_code}</pre>`;
+                        }
+                        
+                        if (data.code_explanation) {
+                            responseContent += `<p>${data.code_explanation}</p>`;
+                        }
+                        
+                        if (data.improved_code) {
+                            responseContent += `<p>Here's the improved code:</p><pre>${data.improved_code}</pre>`;
+                        }
+                        
+                        if (data.analysis) {
+                            responseContent += `<p><strong>Analysis:</strong></p><p>${data.analysis}</p>`;
+                        }
+                        
+                        if (data.suggestions && Array.isArray(data.suggestions)) {
+                            responseContent += `<p><strong>Suggestions:</strong></p><ul>`;
+                            data.suggestions.forEach(suggestion => {
+                                responseContent += `<li>${suggestion}</li>`;
+                            });
+                            responseContent += `</ul>`;
+                        }
+                        
+                        // If we don't have any content yet, provide a default message
+                        if (!responseContent) {
+                            responseContent = "I processed your request but didn't find any specific results to display. You might want to try a different query or code sample.";
+                        }
+                        
+                        // Display the response
+                        addMessage(responseContent, false);
+                        
+                        // Handle code updating
+                        if (data.improved_code) {
+                            const updateButton = document.createElement('button');
+                            updateButton.className = 'btn btn-sm btn-secondary';
+                            updateButton.textContent = 'Update Editor';
+                            updateButton.onclick = function() {
+                                codeEditor.value = data.improved_code;
+                            };
+                            addMessage(`Do you want to update the editor with this improved code? <button class="btn btn-sm btn-secondary" onclick="document.getElementById('code-editor').value = this.getAttribute('data-code')">Update Editor</button>`, false);
+                            document.querySelector('.message:last-child button').setAttribute('data-code', data.improved_code);
+                        }
+                        
+                        if (data.generated_code) {
+                            addMessage(`Do you want to use this generated code in the editor? <button class="btn btn-sm btn-secondary" onclick="document.getElementById('code-editor').value = this.getAttribute('data-code')">Use in Editor</button>`, false);
+                            document.querySelector('.message:last-child button').setAttribute('data-code', data.generated_code);
+                        }
+                    } catch (parseError) {
+                        console.error('Error parsing JSON response:', parseError);
+                        addMessage(`<p class="error">Error parsing response: ${parseError.message}</p><p>Response text: ${xhr.responseText.substring(0, 100)}...</p>`, false);
+                    }
+                } else {
+                    console.error('HTTP error:', xhr.status, xhr.statusText);
+                    addMessage(`<p class="error">HTTP error: ${xhr.status} ${xhr.statusText}</p>`, false);
+                }
+            };
+            
+            xhr.onerror = function() {
+                console.error('Network error occurred');
+                // Remove loading message
+                chatMessages.removeChild(chatMessages.lastChild);
+                // Show error
+                addMessage(`<p class="error">Network error occurred. Please check your connection and try again.</p>`, false);
+                outputArea.textContent = 'Network error occurred';
+            };
+            
+            // Send the request
+            xhr.send(JSON.stringify(requestData));
+        }
+        
+        // Chat send button click with debugging
+        chatSendBtn.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent any default form submission
+            console.log('Chat send button clicked');
+            const message = chatInput.value.trim();
+            if (message) {
+                console.log('Sending chat message:', message);
+                sendMessageToAI(message, 'chat');
+                chatInput.value = '';
+            } else {
+                console.log('Empty chat message, not sending');
+                outputArea.textContent = 'Please enter a message to send.';
+            }
+        });
+        
+        // Chat input enter key
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                console.log('Enter key pressed in chat input');
+                e.preventDefault();
+                chatSendBtn.click(); // Trigger the click event on the button
+            }
+        });
+        
+        // Analyze button click with debugging
+        analyzeBtn.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent any default actions
+            console.log('Analyze button clicked');
+            const code = codeEditor.value.trim();
+            if (code) {
+                console.log('Analyzing code with length:', code.length);
+                // Use direct action type instead of analyzing from message
+                sendMessageToAI('Please analyze the code in the editor', 'analyze');
+            } else {
+                console.log('No code to analyze');
+                outputArea.textContent = 'Please enter some code to analyze.';
+            }
+        });
+        
+        // Explain button click with debugging
+        explainBtn.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent any default actions
+            console.log('Explain button clicked');
+            const code = codeEditor.value.trim();
+            if (code) {
+                console.log('Explaining code with length:', code.length);
+                // Use direct action type instead of interpreting from message
+                sendMessageToAI('Please explain the code in the editor', 'explain');
+            } else {
+                console.log('No code to explain');
+                outputArea.textContent = 'Please enter some code to explain.';
+            }
+        });
+        
+        // Improve button click with debugging
+        improveBtn.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent any default actions
+            console.log('Improve button clicked');
+            const code = codeEditor.value.trim();
+            if (code) {
+                console.log('Improving code with length:', code.length);
+                // Use direct action type instead of interpreting from message
+                sendMessageToAI('Please improve the code in the editor', 'improve');
+            } else {
+                console.log('No code to improve');
+                outputArea.textContent = 'Please enter some code to improve.';
+            }
+        });
+        
+        // Generate button click with debugging
+        generateBtn.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent any default actions
+            console.log('Generate button clicked');
+            
+            // Show a prompt to describe what code they want to generate
+            const description = prompt('Describe the code you want to generate:');
+            if (description && description.trim()) {
+                console.log('Generating code based on description:', description);
+                // We set the language from the dropdown
+                const language = languageSelect.value;
+                console.log('Selected language:', language);
+                
+                // Use generate action type for the request
+                sendMessageToAI(`Generate ${language} code: ${description}`, 'generate');
+                
+                // Make the editor ready for the generated code
+                if (!codeEditor.value.trim()) {
+                    codeEditor.value = `// Generating ${language} code for: ${description}\n// Please wait...`;
+                }
+            } else {
+                console.log('No description provided, cannot generate code');
+                outputArea.textContent = 'Please provide a description of the code you want to generate.';
+            }
+        });
+        
+        // Save button click
+        saveBtn.addEventListener('click', function() {
+            const code = codeEditor.value.trim();
+            if (code) {
+                // Create a form to submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/add';
+                
+                // Create hidden fields
+                const contentField = document.createElement('input');
+                contentField.type = 'hidden';
+                contentField.name = 'content';
+                contentField.value = code;
+                
+                const contextField = document.createElement('input');
+                contextField.type = 'hidden';
+                contextField.name = 'context';
+                contextField.value = 'Code from the collaborative editor';
+                
+                const summaryField = document.createElement('input');
+                summaryField.type = 'hidden';
+                summaryField.name = 'summary';
+                summaryField.value = `${languageSelect.value} code`;
+                
+                const tagsField = document.createElement('input');
+                tagsField.type = 'hidden';
+                tagsField.name = 'tags';
+                tagsField.value = `Code, ${languageSelect.value}`;
+                
+                // Add fields to form
+                form.appendChild(contentField);
+                form.appendChild(contextField);
+                form.appendChild(summaryField);
+                form.appendChild(tagsField);
+                
+                // Add form to the document and submit it
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                outputArea.textContent = 'Please enter some code to save.';
+            }
+        });
+        
+        // Clear button click
+        clearBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear the editor?')) {
+                codeEditor.value = '';
+                outputArea.textContent = '';
+            }
+        });
+        
+        // Add a visible debugging area to the page
+        const debugArea = document.createElement('div');
+        debugArea.id = 'debug-area';
+        debugArea.style.border = '1px solid #ff5500';
+        debugArea.style.padding = '10px';
+        debugArea.style.margin = '10px 0';
+        debugArea.style.backgroundColor = '#fffbf7';
+        debugArea.innerHTML = '<h4>Debug Messages:</h4><div id="debug-messages"></div>';
+        document.querySelector('.container').prepend(debugArea);
+        
+        // Helper function for visible debugging
+        function debugLog(message) {
+            const debugMessages = document.getElementById('debug-messages');
+            const timestamp = new Date().toLocaleTimeString();
+            const msgElement = document.createElement('div');
+            msgElement.innerHTML = `<strong>${timestamp}</strong>: ${message}`;
+            debugMessages.appendChild(msgElement);
+            console.log(`DEBUG: ${message}`);
+        }
+        
+        // Debug button presence
+        debugLog(`Chat button present: ${chatSendBtn !== null}`);
+        debugLog(`Analyze button present: ${analyzeBtn !== null}`);
+        debugLog(`Explain button present: ${explainBtn !== null}`);
+        debugLog(`Improve button present: ${improveBtn !== null}`);
+        debugLog(`Generate button present: ${generateBtn !== null}`);
+        debugLog(`Sample button present: ${document.getElementById('sample-btn') !== null}`);
+        
+        // Direct click handlers using jQuery
+        $('#analyze-btn').on('click', function() {
+            debugLog('Analyze button clicked via jQuery handler');
+            const code = codeEditor.value.trim();
+            if (code) {
+                sendMessageToAI('Please analyze the code in the editor', 'analyze');
+            } else {
+                outputArea.textContent = 'Please enter some code to analyze.';
+            }
+        });
+        
+        $('#explain-btn').on('click', function() {
+            debugLog('Explain button clicked via jQuery handler');
+            const code = codeEditor.value.trim();
+            if (code) {
+                sendMessageToAI('Please explain the code in the editor', 'explain');
+            } else {
+                outputArea.textContent = 'Please enter some code to explain.';
+            }
+        });
+        
+        $('#improve-btn').on('click', function() {
+            debugLog('Improve button clicked via jQuery handler');
+            const code = codeEditor.value.trim();
+            if (code) {
+                sendMessageToAI('Please improve the code in the editor', 'improve');
+            } else {
+                outputArea.textContent = 'Please enter some code to improve.';
+            }
+        });
+        
+        $('#generate-btn').on('click', function() {
+            debugLog('Generate button clicked via jQuery handler');
+            const description = prompt('Describe the code you want to generate:');
+            if (description && description.trim()) {
+                const language = languageSelect.value;
+                debugLog(`Generating ${language} code: ${description}`);
+                sendMessageToAI(`Generate ${language} code: ${description}`, 'generate');
+            } else {
+                outputArea.textContent = 'Please provide a description of the code you want to generate.';
+            }
+        });
+        
+        $('#chat-send-btn').on('click', function() {
+            debugLog('Chat send button clicked via jQuery handler');
+            const message = chatInput.value.trim();
+            if (message) {
+                sendMessageToAI(message, 'chat');
+                chatInput.value = '';
+            } else {
+                outputArea.textContent = 'Please enter a message to send.';
+            }
+        });
+        
+        // Initialize sample button with jQuery
+        const sampleBtn = document.getElementById('sample-btn');
+        if (sampleBtn) {
+            debugLog('Sample button found, attaching jQuery handler');
+            $('#sample-btn').on('click', function() {
+                debugLog('Sample button clicked via jQuery handler');
+            event.preventDefault(); // Prevent default actions
+            console.log('Sample button clicked');
+            const language = languageSelect.value;
+            let sampleCode = '';
+            
+            // Sample code templates for different languages
+            const samples = {
+                python: `def fibonacci(n):
+    """
+    Generate Fibonacci sequence up to n
+    """
+    a, b = 0, 1
+    result = []
+    while a < n:
+        result.append(a)
+        a, b = b, a + b
+    return result
+
+# Test the function
+print(fibonacci(100))`,
+                javascript: `function sortArray(arr) {
+    // Implementation of quicksort algorithm
+    if (arr.length <= 1) {
+        return arr;
+    }
+    
+    const pivot = arr[Math.floor(arr.length / 2)];
+    const left = arr.filter(x => x < pivot);
+    const middle = arr.filter(x => x === pivot);
+    const right = arr.filter(x => x > pivot);
+    
+    return [...sortArray(left), ...middle, ...sortArray(right)];
+}
+
+// Test the function
+const numbers = [5, 3, 7, 1, 9, 8, 2, 4, 6];
+console.log(sortArray(numbers));`,
+                html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample HTML</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        h1 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+        <p>This is a sample HTML template you can modify.</p>
+        <ul>
+            <li>Item 1</li>
+            <li>Item 2</li>
+            <li>Item 3</li>
+        </ul>
+    </div>
+    
+    <script>
+        // JavaScript can go here
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded');
+        });
+    </script>
+</body>
+</html>`,
+                css: `/* Modern CSS Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+header {
+    background-color: #4a6fe3;
+    color: white;
+    padding: 20px 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+}
+
+.nav-links li {
+    margin-left: 20px;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.3s;
+}
+
+.nav-links a:hover {
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+    nav {
+        flex-direction: column;
+    }
+    
+    .nav-links {
+        margin-top: 20px;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .nav-links li {
+        margin: 10px 0;
+    }
+}`,
+                java: `import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+public class TodoApp {
+    private static List<String> todos = new ArrayList<>();
+    private static Scanner scanner = new Scanner(System.in);
+    
+    public static void main(String[] args) {
+        boolean running = true;
+        
+        while (running) {
+            System.out.println("\\nTODO APPLICATION");
+            System.out.println("1. Add Todo");
+            System.out.println("2. List Todos");
+            System.out.println("3. Remove Todo");
+            System.out.println("4. Exit");
+            System.out.print("Choose an option: ");
+            
+            int choice = scanner.nextInt();
+            scanner.nextLine();  // Consume newline
+            
+            switch (choice) {
+                case 1:
+                    addTodo();
+                    break;
+                case 2:
+                    listTodos();
+                    break;
+                case 3:
+                    removeTodo();
+                    break;
+                case 4:
+                    running = false;
+                    System.out.println("Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid option, try again.");
+            }
+        }
+        
+        scanner.close();
+    }
+    
+    private static void addTodo() {
+        System.out.print("Enter new todo: ");
+        String todo = scanner.nextLine();
+        todos.add(todo);
+        System.out.println("Todo added!");
+    }
+    
+    private static void listTodos() {
+        if (todos.isEmpty()) {
+            System.out.println("No todos found.");
+            return;
+        }
+        
+        System.out.println("\\nTODO LIST:");
+        for (int i = 0; i < todos.size(); i++) {
+            System.out.println((i + 1) + ". " + todos.get(i));
+        }
+    }
+    
+    private static void removeTodo() {
+        listTodos();
+        
+        if (todos.isEmpty()) {
+            return;
+        }
+        
+        System.out.print("Enter the number of the todo to remove: ");
+        int index = scanner.nextInt();
+        scanner.nextLine();  // Consume newline
+        
+        if (index < 1 || index > todos.size()) {
+            System.out.println("Invalid todo number.");
+            return;
+        }
+        
+        todos.remove(index - 1);
+        System.out.println("Todo removed!");
+    }
+}`,
+                sql: `-- Create a database for a simple blog
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    bio TEXT,
+    is_admin BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE categories (
+    category_id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT
+);
+
+CREATE TABLE posts (
+    post_id SERIAL PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    content TEXT NOT NULL,
+    user_id INTEGER REFERENCES users(user_id),
+    category_id INTEGER REFERENCES categories(category_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    published BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE comments (
+    comment_id SERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    user_id INTEGER REFERENCES users(user_id),
+    post_id INTEGER REFERENCES posts(post_id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert sample data
+INSERT INTO users (username, email, password_hash, bio, is_admin)
+VALUES 
+('admin', 'admin@example.com', 'hashed_password_here', 'Site administrator', TRUE),
+('johndoe', 'john@example.com', 'hashed_password_here', 'Regular blogger', FALSE);
+
+INSERT INTO categories (name, description)
+VALUES 
+('Technology', 'Posts about programming and tech'),
+('Travel', 'Travel experiences and tips');
+
+INSERT INTO posts (title, content, user_id, category_id)
+VALUES 
+('Getting Started with SQL', 'SQL is a powerful language for managing data...', 1, 1),
+('My Trip to Paris', 'Paris was amazing! Here are some highlights...', 2, 2);
+
+INSERT INTO comments (content, user_id, post_id)
+VALUES 
+('Great article, thanks!', 2, 1),
+('I learned a lot from this.', 2, 1),
+('Paris is on my bucket list!', 1, 2);
+
+-- Query to get all posts with their authors and categories
+SELECT 
+    p.post_id,
+    p.title,
+    p.created_at,
+    u.username AS author,
+    c.name AS category,
+    COUNT(cm.comment_id) AS comment_count
+FROM 
+    posts p
+JOIN 
+    users u ON p.user_id = u.user_id
+JOIN 
+    categories c ON p.category_id = c.category_id
+LEFT JOIN 
+    comments cm ON p.post_id = cm.post_id
+WHERE 
+    p.published = TRUE
+GROUP BY 
+    p.post_id, p.title, p.created_at, u.username, c.name
+ORDER BY 
+    p.created_at DESC;`
+            };
+            
+            // Get sample code for the selected language
+            if (samples[language]) {
+                sampleCode = samples[language];
+            } else {
+                // Default sample code for languages not specifically handled
+                sampleCode = `// Sample code for ${language}
+// This is a placeholder. Select another language for a more detailed example.
+function hello() {
+    console.log("Hello, world!");
+}
+
+hello();`;
+            }
+            
+            // Update the editor with the sample code
+            codeEditor.value = sampleCode;
+            
+            // Show a message in the output area
+            outputArea.textContent = `Sample ${language} code loaded. You can modify it and then use the analyze, explain, or improve buttons.`;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Aetherion AI Chat | Aetherion{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h1>Aetherion AI Assistant</h1>
+    <p>Chat with Aetherion AI about code, memories, or anything else.</p>
+</div>
+
+<div class="chat-container">
+    <div class="chat-messages" id="chat-messages">
+        <div class="message system-message">
+            <div class="message-content">
+                <p>Hello! I'm Aetherion AI. How can I assist you today? Feel free to ask me anything about code, or share your thoughts and memories.</p>
+            </div>
+        </div>
+        
+        {% if result %}
+            {% if result.error %}
+                <div class="message system-message error-message">
+                    <div class="message-content">
+                        <p>{{ result.error }}</p>
+                    </div>
+                </div>
+            {% else %}
+                <div class="message user-message">
+                    <div class="message-content">
+                        <p>{{ user_message }}</p>
+                    </div>
+                </div>
+                
+                <div class="message system-message">
+                    <div class="message-content">
+                        {% if result.chat_response %}
+                            <p>{{ result.chat_response|nl2br|safe }}</p>
+                        {% endif %}
+                        
+                        {% if result.file_info %}
+                            <div class="file-content-container">
+                                <h3>File Information</h3>
+                                {% for file in result.file_info %}
+                                    <div class="file-content">
+                                        <h4>{{ file.path }}</h4>
+                                        {% if file.exists %}
+                                            <pre class="code-display"><code>{{ file.content }}</code></pre>
+                                        {% elif file.note %}
+                                            <p class="template-note">{{ file.note }}</p>
+                                            <pre class="code-display template-code"><code>{{ file.content }}</code></pre>
+                                        {% else %}
+                                            <p class="error-message">{{ file.error }}</p>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        {% if result.generated_code %}
+                            <div class="code-generation-result">
+                                <h3>Generated Code</h3>
+                                <pre class="code-display"><code>{{ result.generated_code }}</code></pre>
+                                
+                                {% if result.code_explanation %}
+                                    <div class="code-explanation">
+                                        <h4>Explanation</h4>
+                                        <div class="explanation-content">
+                                            {{ result.code_explanation|nl2br|safe }}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        {% if result.improved_code %}
+                            <div class="code-improvement-result">
+                                <h3>Improved Code</h3>
+                                <pre class="code-display"><code>{{ result.improved_code }}</code></pre>
+                            </div>
+                        {% endif %}
+                        
+                        {% if result.language %}
+                            <div class="code-analysis-result">
+                                <h3>Code Analysis</h3>
+                                <div class="code-language">
+                                    <p>I detected that you've shared some <strong>{{ result.language.name|capitalize }}</strong> code ({{ result.language.confidence }}% confidence).</p>
+                                </div>
+                                
+                                {% if result.structure %}
+                                <div class="code-structure">
+                                    <h4>I analyzed the structure and found:</h4>
+                                    
+                                    {% if result.structure.functions %}
+                                    <div class="structure-section">
+                                        <p>This code includes {{ result.structure.functions|length }} function(s):</p>
+                                        <ul class="structure-list">
+                                            {% for function in result.structure.functions %}
+                                            <li>
+                                                <span class="code-element-name">{{ function.name }}</span>
+                                                <span class="code-element-details">({{ function.arguments|join(', ') }})</span>
+                                                {% if function.line > 0 %}
+                                                <span class="code-line-number">Line {{ function.line }}</span>
+                                                {% endif %}
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if result.structure.classes %}
+                                    <div class="structure-section">
+                                        <p>The code defines {{ result.structure.classes|length }} class(es):</p>
+                                        <ul class="structure-list">
+                                            {% for class in result.structure.classes %}
+                                            <li>
+                                                <span class="code-element-name">{{ class.name }}</span>
+                                                {% if class.line > 0 %}
+                                                <span class="code-line-number">Line {{ class.line }}</span>
+                                                {% endif %}
+                                                
+                                                {% if class.methods %}
+                                                <ul class="methods-list">
+                                                    {% for method in class.methods %}
+                                                    <li>
+                                                        <span class="code-element-name">{{ method.name }}</span>
+                                                        <span class="code-element-details">({{ method.arguments|join(', ') }})</span>
+                                                    </li>
+                                                    {% endfor %}
+                                                </ul>
+                                                {% endif %}
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if result.structure.imports %}
+                                    <div class="structure-section">
+                                        <p>It imports {{ result.structure.imports|length }} module(s):</p>
+                                        <div class="imports-list">
+                                            {% for import in result.structure.imports %}
+                                            <span class="import-item">{{ import }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                {% if result.quality %}
+                                <div class="code-quality">
+                                    <h4>My thoughts on code quality:</h4>
+                                    <p>The comments ratio is {{ result.quality.comments_ratio }}% and naming convention adherence is around {{ result.quality.naming_conventions }}%.</p>
+                                    <p>{{ result.quality.assessment }}</p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if result.suggestions %}
+                                <div class="code-suggestions">
+                                    <h4>Suggestions for improvement:</h4>
+                                    <ul class="suggestions-list">
+                                        {% for suggestion in result.suggestions %}
+                                        <li>{{ suggestion }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    
+    <div class="chat-input">
+        <form method="POST" action="{{ url_for('main.analyze_text') }}">
+            <div class="chat-form-group">
+                <textarea id="content" name="content" placeholder="Type your message here..." required></textarea>
+                <input type="hidden" id="context" name="context" value="">
+                <input type="hidden" id="analysis_type" name="analysis_type" value="chat">
+                <input type="hidden" id="language" name="language" value="en">
+            </div>
+            
+            <div class="chat-form-actions">
+                <button type="submit" class="btn btn-primary">Send</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-expand textarea as user types
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.querySelector('textarea');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    });
+</script>
+{% endblock %}

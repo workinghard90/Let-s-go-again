@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Aetherion - Memory Vault{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <div class="logo">
+                    <span class="logo-text">✧ Aetherion</span>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="{{ url_for('main.index') }}">Home</a></li>
+                    <li><a href="{{ url_for('main.analyze_text') }}" class="highlight-link">AI Assistant Chat</a></li>
+                    <li><a href="{{ url_for('main.code_editor') }}" class="highlight-link">Code Editor</a></li>
+                    {% if session.authenticated %}
+                        <li><a href="{{ url_for('main.library') }}">Memory Library</a></li>
+                        <li><a href="{{ url_for('main.add_memory') }}">Add Memory</a></li>
+                        <li><a href="{{ url_for('main.upload_memory') }}">Upload File</a></li>
+                        <li><a href="{{ url_for('main.logout') }}">Logout</a></li>
+                    {% else %}
+                        <li><a href="{{ url_for('main.login') }}">Enter Vault</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category|default('info') }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <main>
+        {% block hero %}{% endblock %}
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">✧ Aetherion</div>
+                <div class="footer-links">
+                    <a href="{{ url_for('main.index') }}">Home</a>
+                    <a href="{{ url_for('main.analyze_text') }}" class="highlight-link">AI Assistant Chat</a>
+                    <a href="{{ url_for('main.code_editor') }}" class="highlight-link">Code Editor</a>
+                    {% if session.authenticated %}
+                        <a href="{{ url_for('main.library') }}">Memory Library</a>
+                        <a href="{{ url_for('main.add_memory') }}">Add Memory</a>
+                    {% else %}
+                        <a href="{{ url_for('main.login') }}">Enter Vault</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="copyright">
+                &copy; 2025 Aetherion Memory Vault
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Set up automatic flash message dismissal
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashMessages = document.querySelectorAll('.flash');
+            flashMessages.forEach(function(flash) {
+                setTimeout(function() {
+                    flash.style.opacity = '0';
+                    setTimeout(function() {
+                        flash.remove();
+                    }, 500);
+                }, 5000);
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

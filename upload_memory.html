@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Memory File{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="main-heading">Upload Memory File</h1>
+    <p class="lead">Upload a file and attach it to a new memory</p>
+    
+    <div class="form-container">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">File</label>
+                <input type="file" name="file" id="file" required>
+                <small>Accepted file types: txt, pdf, png, jpg, jpeg, gif, md, docx, xlsx, pptx, mp3, mp4</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="content">Memory Content</label>
+                <textarea name="content" id="content" class="form-control" rows="6" placeholder="Describe this memory or leave blank to use file content (for text files)"></textarea>
+                <small>For text files, if this is left blank, we'll use the beginning of the file content.</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="context">Context (Optional)</label>
+                <textarea name="context" id="context" class="form-control" rows="3" placeholder="Provide additional context for this memory"></textarea>
+                <small>Where or when did this memory occur? What circumstances surrounded it?</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="summary">Summary (Optional)</label>
+                <input type="text" name="summary" id="summary" class="form-control" placeholder="A brief summary of this memory">
+            </div>
+            
+            <div class="form-group">
+                <label for="tags">Tags (Optional)</label>
+                <input type="text" name="tags" id="tags" class="form-control" placeholder="Comma-separated tags">
+                <small>E.g. Personal, Work, Inspiration</small>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Upload & Analyze</button>
+                <a href="{{ url_for('main.library') }}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

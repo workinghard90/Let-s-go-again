@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results | Aetherion{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h1>Search Results</h1>
+    {% if query %}
+        <p>Results for "{{ query }}"</p>
+    {% else %}
+        <p>Search your memories</p>
+    {% endif %}
+</div>
+
+<div class="search-container">
+    <form action="{{ url_for('main.search_memories') }}" method="GET" class="search-form">
+        <div class="form-group search-group">
+            <input type="text" name="query" placeholder="Search memories..." value="{{ query }}">
+            <button type="submit" class="btn btn-primary">Search</button>
+        </div>
+    </form>
+    
+    <div class="search-controls">
+        <a href="{{ url_for('main.library') }}" class="btn">Back to Library</a>
+    </div>
+</div>
+
+<div class="memory-grid">
+    {% if results %}
+        {% for memory in results %}
+            <div class="card">
+                <div class="card-title">
+                    {% if memory.summary %}
+                        {{ memory.summary }}
+                    {% else %}
+                        Memory #{{ memory.id }}
+                    {% endif %}
+                </div>
+                <div class="card-meta">
+                    <span>{{ memory.created_at.strftime('%B %d, %Y') }}</span>
+                </div>
+                <div class="card-content">
+                    {{ memory.content|truncate(150) }}
+                </div>
+                {% if memory.tags %}
+                    <div class="tags">
+                        {% for tag in memory.tags.split(',') %}
+                            <span class="tag">{{ tag.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="card-actions">
+                    <a href="{{ url_for('main.view_memory', memory_id=memory.id) }}" class="btn btn-primary">View Memory</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% elif query %}
+        <div class="empty-state">
+            <p>No memories found matching "{{ query }}".</p>
+            <p>Try a different search term or browse the complete library.</p>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>Enter a search term to find memories.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
