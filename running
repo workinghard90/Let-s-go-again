@@ -1,0 +1,51 @@
+from app import app
+
+if __name__ == "__main__":
+    app.run(debug=True)
+Flask
+transformers
+torch
+sentence-transformers
+# LanguageLightning
+
+LanguageLightning is a Flask-based application enhanced with AI capabilities using open-source tools like Hugging Face Transformers and SQLite.
+
+## Setup Instructions
+
+1. Create a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+2. Install requirements:
+```bash
+pip install -r requirements.txt
+```
+
+3. Run the Flask app:
+```bash
+python run.py
+```
+
+Visit http://localhost:5000 in your browser.
+
+## Features
+
+- Flask-based routing
+- Extendable AI logic (Hugging Face-compatible)
+- Templated UI with room for enhancements
+from flask import render_template
+from app import app
+
+@app.route('/')
+def home():
+    return render_template('home.html')
+# Placeholder for AI functionality (using Hugging Face or other models)
+def process_input(user_input):
+    return f"You said: {user_input}"
+from flask import Flask
+
+app = Flask(__name__)
+
+from app import routes
